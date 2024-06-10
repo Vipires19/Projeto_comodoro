@@ -6,11 +6,11 @@ This project was created for Pomodoro Company to perform a detailed data analysi
 ## Install dependencies
 
 ```bash
-  pip install streamlit plotly pandas
+  pip install -r requirements.txt
 ```
     
 ## Run streamlit
 
 ```bash
-  stramlit run comodoro.py
+  streamlit run comodoro.py
 ```
