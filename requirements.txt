@@ -1,4 +1,5 @@
-streamlit
-plotly
-pandas
 openpyxl
+pandas
+plotly
+streamlit
+streamlit-authenticator
