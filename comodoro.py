@@ -111,17 +111,17 @@ def metricas_restaurantes():
         col4.metric('Gasto total', f'R$ {df_mes_entrega["Valor Total"].sum() + df_mes_comb["Valor Total"].sum():,.2f}')
         col4.metric('Lucro mensal', f'R$ {df_mes["Lucro"].sum():,.2f}')
         
-        df_rest_filtrado = df_rest[['Turno', 'Lucro']]
+        df_mes_filtrado = df_mes[['Turno', 'Lucro']]
 
-        df_rest_filtrado = df_rest_filtrado[df_rest_filtrado['Turno'].str.strip() != 'Não']
+        df_mes_filtrado = df_mes_filtrado[df_mes_filtrado['Turno'].str.strip() != 'Não']
 
-        df_rest_filtrado['Lucro'] = df_rest_filtrado['Lucro'].astype(str).replace('[^\d,.-]', '', regex=True).str.replace(',', '.').astype(float)
+        df_mes_filtrado['Lucro'] = df_mes_filtrado['Lucro'].astype(str).replace('[^\d,.-]', '', regex=True).str.replace(',', '.').astype(float)
 
-        df_filtrado = df_rest_filtrado.sort_values(by='Turno')
+        df_filtrado = df_mes_filtrado.sort_values(by='Turno')
 
-        fig_df_rest_filtrado = px.bar(df_filtrado, x='Turno', y='Lucro', title='Lucro por Turno')
+        fig_df_mes_filtrado = px.bar(df_filtrado, x='Turno', y='Lucro', title='Lucro por Turno')
 
-        st.plotly_chart(fig_df_rest_filtrado)
+        st.plotly_chart(fig_df_mes_filtrado)
                 
 
                 
@@ -149,17 +149,19 @@ def metricas_restaurantes():
         col4.metric('Lucro diário', f'R$ {df_data["Lucro"].sum():,.2f}')
         
     
-        df_rest_filtrado = df_rest[['Turno', 'Lucro']]
+        df_data_filtrado = df_data[['Turno', 'Lucro']]
 
-        df_rest_filtrado = df_rest_filtrado[df_rest_filtrado['Turno'].str.strip() != 'Não']
+        df_data_filtrado = df_data_filtrado[df_data_filtrado['Turno'].str.strip() != 'Não']
 
-        df_rest_filtrado['Lucro'] = df_rest_filtrado['Lucro'].astype(str).replace('[^\d,.-]', '', regex=True).str.replace(',', '.').astype(float)
+        df_data_filtrado['Lucro'] = df_data_filtrado['Lucro'].astype(str).replace('[^\d,.-]', '', regex=True).str.replace(',', '.').astype(float)
 
-        df_filtrado = df_rest_filtrado.sort_values(by='Turno')
+        df_filtrado = df_data_filtrado.sort_values(by='Turno')
 
-        fig_df_rest_filtrado = px.bar(df_filtrado, x='Turno', y='Lucro', title='Lucro por Turno')
+        df_filtrado
 
-        st.plotly_chart(fig_df_rest_filtrado)
+        fig_df_data_filtrado = px.bar(df_filtrado, x='Turno', y='Lucro', title='Lucro por Turno')
+
+        st.plotly_chart(fig_df_data_filtrado)
 
 def metricas_entregadores():
     df = st.session_state['data']
