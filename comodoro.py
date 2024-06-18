@@ -34,7 +34,10 @@ authenticator.login()
 
 def pagina_principal():
     st.title('Comodoro Delivery')
-
+    btn = authenticator.logout()
+    if btn:
+        st.session_state["authentication_status"] == None
+    
     df = st.session_state['data']
     df_entregas =  st.session_state['df_entregas']
     df_gaso = st.session_state['df_gaso']
@@ -211,7 +214,7 @@ def metricas_entregadores():
 
 def main():
     if st.session_state["authentication_status"]:
-    
+            
         df = pd.read_excel('files/Pasta1.xlsx')
         df['Status'] = df['Status'].fillna('Não')
         df['Turno'] = df['Turno'].fillna('Não')
