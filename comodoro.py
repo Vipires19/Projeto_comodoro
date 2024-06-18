@@ -81,7 +81,31 @@ def metricas_gerais():
     df_filtrado = df_filtrado.sort_values(by='Turno')
     df_filtrado_agg = df_filtrado.groupby('Turno', as_index=False).sum()
     fig_df_filtrado = px.bar(df_filtrado_agg, x='Turno', y='Lucro', title='Lucro por Turno Geral')
-    st.plotly_chart(fig_df_filtrado)
+
+    df_mes_filtrado_situacao = df_mes['Status'].value_counts()
+    df_mes_filtrado_situacao.drop('Não', inplace=True)
+    fig_df_mes_filtrado_situacao_pizza = px.pie(names=df_mes_filtrado_situacao.index, values=df_mes_filtrado_situacao.values, title='Situação dos Entregadores')
+
+    df_mes_filtrado_entregas = df_mes[['Dia', 'Quantidade']]
+    df_mes_filtrado_entregas_agg = df_mes_filtrado_entregas.groupby('Dia', as_index=False).sum()
+    fig_df_mes_filtrado_entregas_agg = px.bar(df_mes_filtrado_entregas_agg, x='Dia', y='Quantidade', title='Quantidade de Entregas por Dia')
+
+    df_mes_filtrado_entregas_restaurantes = df_mes[['Restaurante', 'Quantidade']]
+    df_mes_filtrado_entregas_restaurantes = df_mes_filtrado_entregas_restaurantes.groupby('Restaurante', as_index=False).sum()
+    fig_df_mes_filtrado_entregas_restaurantes = px.bar(df_mes_filtrado_entregas_restaurantes, x='Restaurante', y='Quantidade', title='Quantidade de Entregas por Restaurante')
+
+    df_mes_filtrado_lucro_pizza = df_mes[['Restaurante', 'Lucro']]
+    df_mes_filtrado_lucro_pizza_agg = df_mes_filtrado_lucro_pizza.groupby('Restaurante', as_index=False).sum()
+    fig_df_mes_filtrado_lucro_pizza = px.pie(df_mes_filtrado_lucro_pizza_agg, names='Restaurante', values='Lucro', title='Lucro Geral por Restaurante')
+
+    col1_graph, col2_graph = st.columns(2)
+    col1_2_graph, col2_2_graph = st.columns(2)
+
+    col1_graph.plotly_chart(fig_df_filtrado)
+    col2_graph.plotly_chart(fig_df_mes_filtrado_situacao_pizza)
+    col1_2_graph.plotly_chart(fig_df_mes_filtrado_entregas_restaurantes)
+    col2_2_graph.plotly_chart(fig_df_mes_filtrado_lucro_pizza)
+    st.plotly_chart(fig_df_mes_filtrado_entregas_agg)
     
 def metricas_restaurantes():
     df = st.session_state['data']
@@ -210,7 +234,13 @@ def metricas_entregadores():
     df_filtrado = df_moto[['Restaurante',  'Quantidade']]
     df_filtrado_agg = df_filtrado.groupby('Restaurante', as_index=False).sum()
     fig_df_filtrado_agg = px.bar(df_filtrado_agg, x='Restaurante', y='Quantidade', title='Quantidade de Entregas de {} por Restaurante'.format(df_moto['Entregador'].iloc[0]))
+
+    df_filtrado_valor_restaurtante = df_moto[['Lucro', 'Restaurante']]
+    df_filtrado_valor_restaurtante_agg = df_filtrado_valor_restaurtante.groupby('Restaurante', as_index=False).sum()
+    fig_df_mes_filtrado_lucro_pizza = px.pie(df_filtrado_valor_restaurtante_agg, names='Restaurante', values='Lucro', title='Lucro Geral por Restaurante')
+
     st.plotly_chart(fig_df_filtrado_agg)
+    st.plotly_chart(fig_df_mes_filtrado_lucro_pizza)
 
 def main():
     if st.session_state["authentication_status"]:
