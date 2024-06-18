@@ -76,7 +76,8 @@ def metricas_gerais():
     df_filtrado = df_filtrado[df_filtrado['Turno'].str.strip() != 'Não']
     df_filtrado['Lucro'] = df_filtrado['Lucro'].astype(str).replace('[^\d,.-]', '', regex=True).str.replace(',', '.').astype(float)
     df_filtrado = df_filtrado.sort_values(by='Turno')
-    fig_df_filtrado = px.bar(df_filtrado, x='Turno', y='Lucro', title='Lucro por Turno Geral')
+    df_filtrado_agg = df_filtrado.groupby('Turno', as_index=False).sum()
+    fig_df_filtrado = px.bar(df_filtrado_agg, x='Turno', y='Lucro', title='Lucro por Turno Geral')
     st.plotly_chart(fig_df_filtrado)
     
 def metricas_restaurantes():
@@ -112,16 +113,26 @@ def metricas_restaurantes():
         col4.metric('Lucro mensal', f'R$ {df_mes["Lucro"].sum():,.2f}')
         
         df_mes_filtrado = df_mes[['Turno', 'Lucro']]
-
         df_mes_filtrado = df_mes_filtrado[df_mes_filtrado['Turno'].str.strip() != 'Não']
-
         df_mes_filtrado['Lucro'] = df_mes_filtrado['Lucro'].astype(str).replace('[^\d,.-]', '', regex=True).str.replace(',', '.').astype(float)
-
         df_filtrado = df_mes_filtrado.sort_values(by='Turno')
+        df_filtrado_agg = df_filtrado.groupby('Turno', as_index=False).sum()
+        fig_df_mes_filtrado = px.bar(df_filtrado_agg, x='Turno', y='Lucro', title='Lucro por Turno')
 
-        fig_df_mes_filtrado = px.bar(df_filtrado, x='Turno', y='Lucro', title='Lucro por Turno')
+        df_mes_filtrado_situacao = df_mes['Status'].value_counts()
+        df_mes_filtrado_situacao.drop('Não', inplace=True)
+        fig_df_mes_filtrado_situacao_pizza = px.pie(names=df_mes_filtrado_situacao.index, values=df_mes_filtrado_situacao.values, title='Situação dos entregadores')
 
-        st.plotly_chart(fig_df_mes_filtrado)
+        df_mes_filtrado_entregas = df_mes[['Dia', 'Quantidade']]
+        df_mes_filtrado_entregas_agg = df_mes_filtrado_entregas.groupby('Dia', as_index=False).sum()
+        fig_df_mes_filtrado_entregas_agg = px.bar(df_mes_filtrado_entregas_agg, x='Dia', y='Quantidade', title='Quantidade de Entregas por Dia')
+
+        col1_graph, col2_graph = st.columns(2)
+
+        col1_graph.plotly_chart(fig_df_mes_filtrado)
+        col2_graph.plotly_chart(fig_df_mes_filtrado_situacao_pizza)
+        st.plotly_chart(fig_df_mes_filtrado_entregas_agg)
+        
                 
 
                 
@@ -148,20 +159,22 @@ def metricas_restaurantes():
         col4.metric('Gasto total', f'R$ {df_data_entrega["Valor Total"].sum() + df_data_comb["Valor Total"].sum():,.2f}')
         col4.metric('Lucro diário', f'R$ {df_data["Lucro"].sum():,.2f}')
         
-    
         df_data_filtrado = df_data[['Turno', 'Lucro']]
-
         df_data_filtrado = df_data_filtrado[df_data_filtrado['Turno'].str.strip() != 'Não']
-
         df_data_filtrado['Lucro'] = df_data_filtrado['Lucro'].astype(str).replace('[^\d,.-]', '', regex=True).str.replace(',', '.').astype(float)
-
         df_filtrado = df_data_filtrado.sort_values(by='Turno')
+        df_filtrado_agg = df_filtrado.groupby('Turno', as_index=False).sum()
+        fig_df_data_filtrado = px.bar(df_filtrado_agg, x='Turno', y='Lucro', title='Lucro por Turno', barmode="group")
 
-        df_filtrado
+        df_data_filtrado_situacao = df_data['Status'].value_counts()
+        df_data_filtrado_situacao.drop('Não', inplace=True)
+        fig_df_data_filtrado_situacao_pizza = px.pie(names=df_data_filtrado_situacao.index, values=df_data_filtrado_situacao.values, title='Situação dos entregadores')
 
-        fig_df_data_filtrado = px.bar(df_filtrado, x='Turno', y='Lucro', title='Lucro por Turno')
+        col1_graph, col2_graph = st.columns(2)
 
-        st.plotly_chart(fig_df_data_filtrado)
+        col1_graph.plotly_chart(fig_df_data_filtrado)
+        col2_graph.plotly_chart(fig_df_data_filtrado_situacao_pizza)
+        
 
 def metricas_entregadores():
     df = st.session_state['data']
@@ -190,6 +203,11 @@ def metricas_entregadores():
     col3.metric('Valor total arrecadado', f'R$ {df_moto["Valor Entregador"].sum():,.2f}')
     col3.metric('Restaurante em que mais trabalhou:', df_moto['Restaurante'].value_counts().index[0])
     col3.metric('Turno em que mais trabalhou:', df_moto['Turno'].value_counts().index[0])
+
+    df_filtrado = df_moto[['Restaurante',  'Quantidade']]
+    df_filtrado_agg = df_filtrado.groupby('Restaurante', as_index=False).sum()
+    fig_df_filtrado_agg = px.bar(df_filtrado_agg, x='Restaurante', y='Quantidade', title='Quantidade de Entregas de {} por Restaurante'.format(df_moto['Entregador'].iloc[0]))
+    st.plotly_chart(fig_df_filtrado_agg)
 
 def main():
     if st.session_state["authentication_status"]:
