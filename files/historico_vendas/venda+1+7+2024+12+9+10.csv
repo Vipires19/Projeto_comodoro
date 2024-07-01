@@ -1,0 +1,3 @@
+codigo_produto,descricao,quantidade,valor_unitario,valor_venda,forma_pagamento
+2,dd,50,1,50,Cartão de crédito
+3,local,80,5,400,Pix

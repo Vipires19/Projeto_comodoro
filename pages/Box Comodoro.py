@@ -6,6 +6,7 @@ import streamlit_authenticator as stauth
 from pathlib import Path
 from openpyxl import load_workbook
 import datetime
+import os
 
 st.set_page_config(
             layout =  'wide',
@@ -76,7 +77,33 @@ def dados_vendas():
     df3 = df3.set_index('codigo_produto')
     st.session_state['data3'] = df3
     df3 = st.session_state['data3']
-        
+
+def visualiza_vendas():
+    lista = os.listdir('files/historico_vendas')
+    dia = []
+    hora = []
+    for i in lista:
+        nova_string1 = f'{i.split("venda")[1].split(".csv")[0].split("+")[1]}/{i.split("venda")[1].split(".csv")[0].split("+")[2]}/{i.split("venda")[1].split(".csv")[0].split("+")[3]}'
+        nova_string2 = f'{i.split("venda")[1].split(".csv")[0].split("+")[4]}:{i.split("venda")[1].split(".csv")[0].split("+")[5]}:{i.split("venda")[1].split(".csv")[0].split("+")[6]}'
+        dia.append(nova_string1)
+        hora.append(nova_string2)
+    
+    data = pd.DataFrame(columns = ['dia','hora'])
+    data['dia'] = dia
+    data['hora'] = hora
+
+    
+    col1,col2 = st.columns(2)
+    day = col1.selectbox('Dia', data['dia'].value_counts().index)
+    df_dia = data[data['dia'] == day]
+    hour = col2.selectbox('Hora', df_dia['hora'].value_counts().index)    
+    
+    venda_abrir = f'+{day.split("/")[0]}+{day.split("/")[1]}+{day.split("/")[2]}+{hour.split(":")[0]}+{hour.split(":")[1]}+{hour.split(":")[2]}'
+    venda_aberta = pd.read_csv(f'files/historico_vendas/venda{venda_abrir}.csv')
+    venda_df = pd.DataFrame(venda_aberta)
+    venda_df
+
+
 def pagina_principal():
     st.title('**BOX Comodoro**')
 
@@ -102,7 +129,7 @@ def pagina_principal():
         dados_vendas()
         df3 = st.session_state['data3']
         df3.to_excel('files/venda.xlsx')
-        
+        vendas = st.session_state['vendas']
         col1,col2,col3,col4,col5 = st.columns(5)
         soma = df3['valor_venda'].sum()
         col1.metric('Valor Total', f'R$ {soma:.2f}')
@@ -118,12 +145,19 @@ def pagina_principal():
             st.session_state['data3'] = df3
             df3 = st.session_state['data3']
             
+            vendas['Ano'].loc[len(vendas)]= data.year
+            vendas['mes'].loc[len(vendas)]= data.month
+            vendas['Dia'].loc[len(vendas)]= data.day
+            vendas['valor'].loc[len(vendas)]= soma
+                       
         st.dataframe(df3)
+        
 
     tab3.title('Histórico de vendas')
     with tab3:
-       pass
-    
+        visualiza_vendas()
+        
+
 def main():
     if st.session_state["authentication_status"]:
     
@@ -141,6 +175,10 @@ def main():
 
     elif st.session_state["authentication_status"] == None:
         st.warning("Please insert username and password")
+
+vendas = pd.DataFrame(columns = ['Ano','mes','Dia','valor'])
+st.session_state['vendas'] = vendas
+vendas = st.session_state['vendas']
 
 if __name__ == '__main__':
     main()
