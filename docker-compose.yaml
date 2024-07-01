@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  comodoro:
+    build: .
+    command: ["streamlit", "run", "comodoro.py"]
+    volumes:
+      - .:/app
+      - ./db:/db
+      - ./files:/files
+      - ./pages:/pages
+    ports:
+      - 8501:8501
