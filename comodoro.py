@@ -41,9 +41,13 @@ def pagina_principal():
     df = st.session_state['data']
     df_entregas =  st.session_state['df_entregas']
     df_gaso = st.session_state['df_gaso']
+    
     return(df,df_entregas,df_gaso)
 
 def metricas_gerais():
+    valor_vendas = st.session_state['valor_vendas']
+    df2 = pd.read_excel('files/estoque.xlsx')
+    df2 = df2.set_index('codigo')
     df = st.session_state['data']
     mes = df.index
     meses = st.selectbox('Mês', mes)
@@ -61,7 +65,9 @@ def metricas_gerais():
     col2.metric('Valor total da entregas', f'R$ {df_mes_entrega["Valor Total"].sum()}')
     col2.metric('Valor total de Combustível', f'R$ {df_mes_comb["Valor Total"].sum()}')
     col2.metric('Gasto total', f'R$ {(df_mes_entrega["Valor Total"].sum() + df_mes_comb["Valor Total"].sum()):,.2f}')
-    col3.metric('Lucro mensal', f'R$ {df_mes["Lucro"].sum():,.2f}')
+    col3.metric('Lucro mensal entregas', f'R$ {df_mes["Lucro"].sum():,.2f}')
+    col3.metric('Lucro mensal Box', f'R$ {valor_vendas[valor_vendas["mes"] == meses]["valor"].sum():,.2f}')
+    col3.metric('Gastos do Box', f'R$ {df2["valor-compra"].sum():,.2f}')
 
     on1 = st.toggle('Mostrar dados')
     if on1:
@@ -257,6 +263,9 @@ def main():
         st.session_state['data'] = df
         st.session_state['df_entregas'] = df_entregas =  df[df['Produto'] == 'entregas']
         st.session_state['df_gaso'] = df_gaso = df[df['Produto'] == 'combustivel']
+        valor_vendas = pd.read_excel('files/valor_vendas.xlsx')
+        st.session_state['valor_vendas'] = valor_vendas
+        valor_vendas = st.session_state['valor_vendas']
     
         pagina_principal()
 

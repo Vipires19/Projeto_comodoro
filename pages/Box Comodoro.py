@@ -63,7 +63,8 @@ def dados_vendas():
     df3 = st.session_state['data3']
     
     col1,col2,col3,col4,col5,col6 = st.columns(6)
-    cod = col1.number_input('Código do produto:', min_value = 1, max_value = 100000 )
+    codigos = df2.index
+    cod = col1.selectbox('Código do produto:', codigos)
     produto = df2[df2.index == cod]['produto']
     descricao =  col2.text_input('Descrição', value = produto.iloc[0])
     valor_unit = df2[df2.index == cod]['valor-venda'].iloc[0]
@@ -157,12 +158,15 @@ def pagina_principal():
         colunas_desejadas = ["descricao", "quantidade", "valor_unitario", "valor_venda", "forma_pagamento"]
         df3[colunas_desejadas].to_excel('files/venda.xlsx')
         vendas = st.session_state['vendas']
+        valor_vendas = st.session_state['valor_vendas']
         col1,col2,col3,col4,col5 = st.columns(5)
         soma = df3['valor_venda'].sum()
+        #fpagamento = df3['forma_pagamento'].value_counts()
         col1.metric('Valor Total', f'R$ {soma:.2f}')
         venda = col2.button('Fechar venda')
+        data = datetime.datetime.now()
+        sell = [data.year,data.month,data.day,soma]
         if venda:
-            data = datetime.datetime.now()
             csv = df3.to_csv(f'files/historico_vendas/venda+{data.day}+{data.month}+{data.year}+{data.hour}+{data.minute}+{data.second}.csv')
             df3 = pd.read_excel('files/nova_venda.xlsx')
             st.session_state['data3'] = df3
@@ -173,13 +177,14 @@ def pagina_principal():
             st.session_state['data3'] = df3
             df3 = st.session_state['data3']
             
-            vendas['Ano'].loc[len(vendas)]= data.year
-            vendas['mes'].loc[len(vendas)]= data.month
-            vendas['Dia'].loc[len(vendas)]= data.day
-            vendas['valor'].loc[len(vendas)]= soma
+            valor_vendas.loc[len(valor_vendas)]= sell
                        
             atualiza_estoque(cod_prod_venda, qtde_prod_venda)
         
+        valor_vendas = valor_vendas.set_index('Ano')
+        st.session_state['valor_vendas'] = valor_vendas
+        valor_vendas = st.session_state['valor_vendas']
+        valor_vendas.to_excel('files/valor_vendas.xlsx')
         st.dataframe(df3)
         
 
@@ -197,7 +202,10 @@ def main():
         df3 = pd.read_excel('files/venda.xlsx')
         st.session_state['data3'] = df3
         df3 = st.session_state['data3']
-        
+        valor_vendas = pd.read_excel('files/valor_vendas.xlsx')
+        st.session_state['valor_vendas'] = valor_vendas
+        valor_vendas = st.session_state['valor_vendas'] 
+
         pagina_principal()
   
     elif st.session_state["authentication_status"] == False:
