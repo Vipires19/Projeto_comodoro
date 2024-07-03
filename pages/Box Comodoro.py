@@ -7,6 +7,11 @@ from pathlib import Path
 from openpyxl import load_workbook
 import datetime
 import os
+import logging
+
+
+logging.basicConfig(level=logging.INFO)
+
 
 st.set_page_config(
             layout =  'wide',
@@ -78,6 +83,8 @@ def dados_vendas():
     st.session_state['data3'] = df3
     df3 = st.session_state['data3']
 
+    return cod, quantidade
+
 def visualiza_vendas():
     lista = os.listdir('files/historico_vendas')
     dia = []
@@ -103,6 +110,25 @@ def visualiza_vendas():
     venda_df = pd.DataFrame(venda_aberta)
     venda_df
 
+def atualiza_estoque(codigo, quantidade):
+    df_estoque = pd.read_excel('files/estoque.xlsx')
+
+    linha_encontrada = df_estoque[df_estoque['codigo'] == codigo]
+
+    if not linha_encontrada.empty:
+
+        qtd_atual = linha_encontrada['quantidade'].values[0]
+
+        df_estoque.loc[linha_encontrada.index, 'quantidade'] = qtd_atual - quantidade
+
+        colunas_desejadas = ['codigo', 'quantidade', 'produto', 'valor-compra', 'valor-venda']
+        df_estoque[colunas_desejadas].to_excel('files/estoque.xlsx', index=False)
+
+    else:
+        logging.info(f"Nenhuma linha encontrada com o código {codigo}")
+
+        st.warning("Nenhum encontrado em estoque com o código fornecido")
+          
 
 def pagina_principal():
     st.title('**BOX Comodoro**')
@@ -126,9 +152,10 @@ def pagina_principal():
     tab2.title('Vendas')
 
     with tab2:
-        dados_vendas()
+        cod_prod_venda, qtde_prod_venda = dados_vendas()
         df3 = st.session_state['data3']
-        df3.to_excel('files/venda.xlsx')
+        colunas_desejadas = ["descricao", "quantidade", "valor_unitario", "valor_venda", "forma_pagamento"]
+        df3[colunas_desejadas].to_excel('files/venda.xlsx')
         vendas = st.session_state['vendas']
         col1,col2,col3,col4,col5 = st.columns(5)
         soma = df3['valor_venda'].sum()
@@ -140,8 +167,9 @@ def pagina_principal():
             df3 = pd.read_excel('files/nova_venda.xlsx')
             st.session_state['data3'] = df3
             df3 = st.session_state['data3']
+            colunas_desejadas = ["descricao", "quantidade", "valor_unitario", "valor_venda", "forma_pagamento"]
             df3 = df3.set_index('codigo_produto')
-            df3.to_excel('files/venda.xlsx')
+            df3[colunas_desejadas].to_excel('files/venda.xlsx')
             st.session_state['data3'] = df3
             df3 = st.session_state['data3']
             
@@ -150,6 +178,8 @@ def pagina_principal():
             vendas['Dia'].loc[len(vendas)]= data.day
             vendas['valor'].loc[len(vendas)]= soma
                        
+            atualiza_estoque(cod_prod_venda, qtde_prod_venda)
+        
         st.dataframe(df3)
         
 
