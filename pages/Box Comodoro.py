@@ -57,6 +57,7 @@ def inserindo_dados():
     df2 = df.set_index('codigo')
     st.session_state['data2'] = df2
     df2 = st.session_state['data2']
+    df2.to_excel('files/estoque.xlsx')
 
 def dados_vendas():
     df2 = st.session_state['data2']
@@ -146,7 +147,7 @@ def pagina_principal():
         inserindo_dados()
         df = st.session_state['data']
         df2 = st.session_state['data2']
-        df2.to_excel('files/estoque.xlsx')
+        
 
         st.dataframe(df.set_index('codigo'))
         
