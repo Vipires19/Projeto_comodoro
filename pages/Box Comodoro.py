@@ -72,7 +72,7 @@ def dados_vendas():
     quantidade = col4.number_input('Quantidade', min_value = 1, max_value = 100000)
     valor_total = valor_unit*quantidade
     valor_compra = col5.metric('Valor', f'R$ {valor_total:.2F}')
-    forma_pgto = ['Cartão de crédito', 'Cartão de débito', 'Dinheiro', 'Pix']
+    forma_pgto = ['Cartão de crédito', 'Cartão de débito', 'Dinheiro', 'Pix', 'Desconto em folha']
     pagamento = col6.selectbox('Forma de pagamento', forma_pgto)
     add = col6.button('Adicionar produto')
 
