@@ -67,6 +67,8 @@ def inserindo_dados():
     df = pd.DataFrame(estoquedf, columns= ['_id', 'Código','Descrição','Quantidade', 'Valor de compra', 'Valor de venda'])
     df.drop(columns='_id', inplace=True)
     st.session_state['estoque'] = df
+    estoque = st.session_state['estoque']
+    st.dataframe(estoque.set_index('Código')
     
 
 
