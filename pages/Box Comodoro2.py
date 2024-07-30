@@ -68,7 +68,7 @@ def inserindo_dados():
     df.drop(columns='_id', inplace=True)
     st.session_state['estoque'] = df
     estoque = st.session_state['estoque']
-    st.dataframe(estoque.set_index('Código')
+    st.dataframe(estoque.set_index('Código'))
     
 
 
