@@ -58,17 +58,16 @@ def inserindo_dados():
         entry = [{'Código' : codigo, 'Quantidade' : quantidade, 'Descrição' : descricao, 'Valor de compra' : valor_compra, 'Valor de venda' : valor_venda}]
         result = coll.insert_many(entry)
     
-    estoque = db.estoque.find({})
+    estoque1 = db.estoque.find({})
 
     estoquedf = []
-    for item in estoque:
+    for item in estoque1:
         estoquedf.append(item)
 
     df = pd.DataFrame(estoquedf, columns= ['_id', 'Código','Descrição','Quantidade', 'Valor de compra', 'Valor de venda'])
     df.drop(columns='_id', inplace=True)
-    st.session_state['estoque'] = df
-    estoque = st.session_state['estoque']
-    st.dataframe(estoque.set_index('Código'))
+    estoque = df
+    st.session_state['estoque'] = estoque
     
 
 
