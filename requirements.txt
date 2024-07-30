@@ -3,3 +3,4 @@ pandas
 plotly
 streamlit
 streamlit-authenticator
+pymongo
