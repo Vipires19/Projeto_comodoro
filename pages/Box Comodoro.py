@@ -10,13 +10,16 @@ from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 import urllib
 import urllib.parse
+import certifi
 
 mongo_user = st.secrets['MONGO_USER']
 mongo_pass = st.secrets["MONGO_PASS"]
 
 username = urllib.parse.quote_plus(mongo_user)
 password = urllib.parse.quote_plus(mongo_pass)
-client = MongoClient("mongodb+srv://%s:%s@cluster0.gjkin5a.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0" % (username, password))
+
+ca = certifi.where()
+client = MongoClient("mongodb+srv://%s:%s@cluster0.gjkin5a.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0" % (username, password), tlsCAFile=ca)
 st.cache_resource = client
 db = client.estoquecmdr
 coll = db.estoque
