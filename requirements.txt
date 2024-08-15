@@ -1,8 +1,8 @@
+certifi
 openpyxl
 pandas
 plotly
+pymongo
+python-dotenv
 streamlit
 streamlit-authenticator
-python-dotenv
-pymongo
-certifi
