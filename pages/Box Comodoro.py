@@ -11,6 +11,11 @@ from pymongo.server_api import ServerApi
 import urllib
 import urllib.parse
 import certifi
+from db.getUsersInfo import login as db_login
+from db.insertSale import register_sale
+
+from datetime import datetime, timedelta, timezone
+import pytz
 
 mongo_user = st.secrets['MONGO_USER']
 mongo_pass = st.secrets["MONGO_PASS"]
@@ -46,11 +51,13 @@ credentials = {
     }
 }
 
+
 authenticator = stauth.Authenticate(credentials= credentials, cookie_name="st_session", cookie_key="key123", cookie_expiry_days= 1)
 authenticator.login()
 
 def inserindo_dados():
     col1,col2,col3,col4,col5 = st.columns(5)
+    nome = col1.text_input('Nome do Produto')
     codigo = col1.number_input('Código do Produto', min_value = 0, max_value = 100000)
     quantidade = col2.number_input('Quant.', min_value = 0, max_value = 100000)
     descricao = col3.text_input('Descrição do produto')
@@ -58,7 +65,7 @@ def inserindo_dados():
     valor_venda = col5.number_input('Valor de venda em R$')
     adiciona_produto = col5.button('Adicionar')
     if adiciona_produto:
-        entry = [{'Código' : codigo, 'Quantidade' : quantidade, 'Descrição' : descricao, 'Valor de compra' : valor_compra, 'Valor de venda' : valor_venda}]
+        entry = [{'Nome': nome,'Código' : codigo, 'Quantidade' : quantidade, 'Descrição' : descricao, 'Valor de compra' : valor_compra, 'Valor de venda' : valor_venda}]
         result = coll.insert_many(entry)
     
     estoque1 = db.estoque.find({})
@@ -67,10 +74,96 @@ def inserindo_dados():
     for item in estoque1:
         estoquedf.append(item)
 
-    df = pd.DataFrame(estoquedf, columns= ['_id', 'Código','Descrição','Quantidade', 'Valor de compra', 'Valor de venda'])
+    df = pd.DataFrame(estoquedf, columns= ['_id', 'Nome', 'Código','Descrição','Quantidade', 'Valor de compra', 'Valor de venda'])
     df.drop(columns='_id', inplace=True)
     estoque = df
     st.session_state['estoque'] = estoque
+
+def historico_vendas():
+
+    venda1 = db.Vendas.find({})
+
+    fuso_horario_brasilia = pytz.timezone("America/Sao_Paulo")
+
+    vendadf = []
+    for item in venda1:
+        # Ajustar o horário armazenado em UTC para o horário de Brasília
+        if 'Data da venda' in item:
+            data_utc = item['Data da venda']
+            if isinstance(data_utc, datetime):
+                data_brasilia = data_utc.astimezone(fuso_horario_brasilia)
+                item['Data da venda'] = data_brasilia.strftime('%d/%m/%Y %H:%M')
+
+        vendadf.append(item)
+
+    df = pd.DataFrame(vendadf, columns= ['_id', 'Nome', 'Código','Descrição','Quantidade', 'Valor de venda', 'Data da venda'])
+    df.drop(columns='_id', inplace=True)
+    historico_venda = df
+    st.session_state['historico_venda'] = historico_venda
+
+
+def efetuando_vendas():
+
+    opcoes_dropdown = ['']
+    produto_dict = {}
+
+    st.markdown(
+        """
+        <style>
+        .custom-button {
+            margin-top: 28px;
+            margin-left: 20px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    todos_produtos = db.estoque.find({})
+
+    for item in todos_produtos:
+
+        nome_dict = item.get('Nome')
+        codigo_dict = item.get('Código')
+
+        opcoes_dropdown.append(nome_dict)
+
+        produto_dict[nome_dict] = codigo_dict
+
+
+
+    col1,col2,col3,col4, col5 = st.columns(5)
+    quantidade = col3.number_input('Quant.', min_value = 0, max_value = 100000, key="input_quantidade_venda")
+
+    valor_venda = col4.number_input('Valor de venda em R$', key="input_valor_venda" )
+
+    with col1:
+        nome = st.selectbox('Escolha uma opção:', opcoes_dropdown, key='input_nome_venda')
+
+    codigo_inicial = produto_dict.get(nome, 0)
+    
+    with col2:
+        codigo = st.number_input('Código do Produto', min_value=0, max_value=100000, key="input_codigo_venda", value=codigo_inicial, disabled=True)
+
+
+    with col5:
+        st.markdown('<div class="custom-button">', unsafe_allow_html=True)
+        vende_produto = st.button('Concluir Venda', key="a")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    if vende_produto:
+        register_sale(nome, quantidade, valor_venda)
+    
+    venda1 = db.estoque.find({})
+
+    vendadf = []
+    for item in venda1:
+        vendadf.append(item)
+
+    df = pd.DataFrame(vendadf, columns= ['_id', 'Nome', 'Código','Descrição','Quantidade', 'Valor de compra', 'Valor de venda'])
+    df.drop(columns='_id', inplace=True)
+    venda = df
+    st.session_state['venda'] = venda
 
 def pagina_principal():
     st.title('**BOX Comodoro**')
@@ -91,12 +184,18 @@ def pagina_principal():
     tab2.title('Vendas')
 
     with tab2:
-        pass                       
+        efetuando_vendas()
+        venda = st.session_state['venda']
+        st.dataframe(venda.set_index('Código'))
+                     
         
     tab3.title('Histórico de vendas')
     
     with tab3:
-        pass
+        historico_vendas()
+        historico_venda = st.session_state['historico_venda']
+        st.dataframe(historico_venda.set_index('Código'))
+
         
 
 def main():
@@ -110,5 +209,7 @@ def main():
     elif st.session_state["authentication_status"] == None:
         st.warning("Please insert username and password")
 
+
 if __name__ == '__main__':
+
     main()
