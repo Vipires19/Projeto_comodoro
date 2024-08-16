@@ -58,7 +58,7 @@ authenticator.login()
 def inserindo_dados():
     col1,col2,col3,col4,col5 = st.columns(5)
     nome = col1.text_input('Nome do Produto')
-    codigo = col3.number_input('Código do Produto', min_value = 0, max_value = 100000)
+    codigo = col2.number_input('Código do Produto', min_value = 0, max_value = 100000)
     quantidade = col3.number_input('Quant.', min_value = 0, max_value = 100000)
     #descricao = col3.text_input('Descrição do produto')
     valor_compra = col4.number_input('Valor de Compra em R$')
