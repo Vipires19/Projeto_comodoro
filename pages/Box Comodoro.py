@@ -11,6 +11,11 @@ from pymongo.server_api import ServerApi
 import urllib
 import urllib.parse
 import certifi
+from db.getUsersInfo import login as db_login
+from db.insertSale import register_sale
+
+from datetime import datetime, timedelta, timezone
+import pytz
 
 mongo_user = st.secrets['MONGO_USER']
 mongo_pass = st.secrets["MONGO_PASS"]
@@ -46,30 +51,21 @@ credentials = {
     }
 }
 
+
 authenticator = stauth.Authenticate(credentials= credentials, cookie_name="st_session", cookie_key="key123", cookie_expiry_days= 1)
 authenticator.login()
 
 def inserindo_dados():
     col1,col2,col3,col4,col5 = st.columns(5)
-<<<<<<< Updated upstream
-    codigo = col1.number_input('Código do Produto', min_value = 0, max_value = 100000)
-    quantidade = col2.number_input('Quant.', min_value = 0, max_value = 100000)
-    descricao = col3.text_input('Descrição do produto')
-=======
     nome = col1.text_input('Nome do Produto')
     codigo = col2.number_input('Código do Produto', min_value = 0, max_value = 100000)
     quantidade = col3.number_input('Quant.', min_value = 0, max_value = 100000)
     #descricao = col3.text_input('Descrição do produto')
->>>>>>> Stashed changes
     valor_compra = col4.number_input('Valor de Compra em R$')
     valor_venda = col5.number_input('Valor de venda em R$')
     adiciona_produto = col5.button('Adicionar')
     if adiciona_produto:
-<<<<<<< Updated upstream
-        entry = [{'Código' : codigo, 'Quantidade' : quantidade, 'Descrição' : descricao, 'Valor de compra' : valor_compra, 'Valor de venda' : valor_venda}]
-=======
         entry = [{'Nome': nome,'Código' : codigo, 'Quantidade' : quantidade, 'Valor de compra' : valor_compra, 'Valor de venda' : valor_venda}]
->>>>>>> Stashed changes
         result = coll.insert_many(entry)
     
     estoque1 = db.estoque.find({})
@@ -78,17 +74,11 @@ def inserindo_dados():
     for item in estoque1:
         estoquedf.append(item)
 
-<<<<<<< Updated upstream
-    df = pd.DataFrame(estoquedf, columns= ['_id', 'Código','Descrição','Quantidade', 'Valor de compra', 'Valor de venda'])
-=======
     df = pd.DataFrame(estoquedf, columns= ['_id', 'Nome', 'Código','Quantidade', 'Valor de compra', 'Valor de venda'])
->>>>>>> Stashed changes
     df.drop(columns='_id', inplace=True)
     estoque = df
     st.session_state['estoque'] = estoque
 
-<<<<<<< Updated upstream
-=======
 def historico_vendas():
 
     venda1 = db.Vendas.find({})
@@ -106,7 +96,7 @@ def historico_vendas():
 
         vendadf.append(item)
 
-    df = pd.DataFrame(vendadf, columns= ['_id', 'Nome', 'Código', 'Quantidade', 'Valor de venda', 'Data da venda'])
+    df = pd.DataFrame(vendadf, columns= ['_id', 'Nome', 'Código','Quantidade', 'Valor de venda', 'Data da venda'])
     df.drop(columns='_id', inplace=True)
     historico_venda = df
     st.session_state['historico_venda'] = historico_venda
@@ -175,7 +165,6 @@ def efetuando_vendas():
     venda = df
     st.session_state['venda'] = venda
 
->>>>>>> Stashed changes
 def pagina_principal():
     st.title('**BOX Comodoro**')
 
@@ -195,12 +184,18 @@ def pagina_principal():
     tab2.title('Vendas')
 
     with tab2:
-        pass                       
+        efetuando_vendas()
+        venda = st.session_state['venda']
+        st.dataframe(venda.set_index('Código'))
+                     
         
     tab3.title('Histórico de vendas')
     
     with tab3:
-        pass
+        historico_vendas()
+        historico_venda = st.session_state['historico_venda']
+        st.dataframe(historico_venda.set_index('Código'))
+
         
 
 def main():
@@ -214,5 +209,7 @@ def main():
     elif st.session_state["authentication_status"] == None:
         st.warning("Please insert username and password")
 
+
 if __name__ == '__main__':
+
     main()
