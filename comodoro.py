@@ -9,7 +9,7 @@ from pathlib import Path
 
 st.set_page_config(
             layout =  'wide',
-            page_title = 'Comodoro Delivery',
+            page_title = 'Delivery',
         )
 
 
