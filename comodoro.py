@@ -33,7 +33,7 @@ authenticator = stauth.Authenticate(credentials= credentials, cookie_name="st_se
 authenticator.login()
 
 def pagina_principal():
-    st.title('Comodoro Delivery')
+    st.title('Delivery')
     btn = authenticator.logout()
     if btn:
         st.session_state["authentication_status"] == None
