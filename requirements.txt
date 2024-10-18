@@ -5,4 +5,4 @@ plotly
 pymongo
 python-dotenv
 streamlit
-streamlit-authenticator
+streamlit-authenticator == 0.3.3
