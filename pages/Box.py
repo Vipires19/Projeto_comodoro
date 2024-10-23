@@ -132,7 +132,7 @@ def efetuando_vendas():
 
 
 
-    col1,col2,col3,col4, col5 = st.columns(5)
+    col1,col2,col3,col4, col5,col6,col7 = st.columns(5)
     quantidade = col3.number_input('Quant.', min_value = 0, max_value = 100000, key="input_quantidade_venda")
 
     valor_venda = col4.number_input('Valor de venda em R$', key="input_valor_venda" )
@@ -144,9 +144,14 @@ def efetuando_vendas():
     
     with col2:
         codigo = st.number_input('Código do Produto', min_value=0, max_value=100000, key="input_codigo_venda", value=codigo_inicial, disabled=True)
-
-
+                
     with col5:
+        cliente = st.text_input('Nome do cliente')
+pagamento = ['Pix', 'Cartão de crédito', 'Cartão de débito', 'Dinheiro', 'Desconto em folha')
+    with col6:
+        forma_pagamento = st.selectbox('Forma de pagamento', pagamento)
+
+    with col7:
         st.markdown('<div class="custom-button">', unsafe_allow_html=True)
         vende_produto = st.button('Concluir Venda', key="a")
         st.markdown('</div>', unsafe_allow_html=True)
@@ -160,7 +165,7 @@ def efetuando_vendas():
     for item in venda1:
         vendadf.append(item)
 
-    df = pd.DataFrame(vendadf, columns= ['_id', 'Nome', 'Código','Quantidade', 'Valor de compra', 'Valor de venda'])
+    df = pd.DataFrame(vendadf, columns= ['_id', 'Nome', 'Código','Quantidade', 'Valor de compra', 'Valor de venda','Cliente', 'Forma de pagamento'])
     df.drop(columns='_id', inplace=True)
     venda = df
     st.session_state['venda'] = venda
