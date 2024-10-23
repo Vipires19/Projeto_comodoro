@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 import pytz
 import streamlit as st
 
-def register_sale(name_func, quantity_func, sale_func):
+def register_sale(name_func, quantity_func, sale_func, cliente, forma_pagamento):
 
     def check_quantity(name, quantity):
         doc = coll_estoque.find_one({'Nome': name})
@@ -55,7 +55,7 @@ def register_sale(name_func, quantity_func, sale_func):
 
             # Adicionar a venda na tabela de vendas
             venda = coll_vendas.insert_one({'Nome': name_func, 'Código': code_venda, 'Quantidade': quantity_func, 
-                                            'Descrição': desc_venda, 'Valor de venda': sale_func, 'Data da venda': tempo_agora })
+                                            'Descrição': desc_venda, 'Valor de venda': sale_func, 'Data da venda': tempo_agora, 'Cliente' : cliente, 'Forma de pagamento' : forma_pagamento })
 
             print(f"Produto atualizado com sucesso e com ID {resultado}")
 
