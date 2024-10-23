@@ -132,7 +132,7 @@ def efetuando_vendas():
 
 
 
-    col1,col2,col3,col4, col5,col6,col7 = st.columns(5)
+    col1,col2,col3,col4, col5,col6,col7 = st.columns(7)
     quantidade = col3.number_input('Quant.', min_value = 0, max_value = 100000, key="input_quantidade_venda")
 
     valor_venda = col4.number_input('Valor de venda em R$', key="input_valor_venda" )
