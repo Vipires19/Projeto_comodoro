@@ -96,7 +96,7 @@ def historico_vendas():
 
         vendadf.append(item)
 
-    df = pd.DataFrame(vendadf, columns= ['_id', 'Nome', 'Código','Quantidade', 'Valor de venda', 'Data da venda'])
+    df = pd.DataFrame(vendadf, columns= ['_id', 'Nome', 'Código','Quantidade', 'Valor de venda', 'Data da venda', 'Cliente', 'Forma de pagamento'])
     df.drop(columns='_id', inplace=True)
     historico_venda = df
     st.session_state['historico_venda'] = historico_venda
@@ -157,7 +157,7 @@ def efetuando_vendas():
         st.markdown('</div>', unsafe_allow_html=True)
 
     if vende_produto:
-        register_sale(nome, quantidade, valor_venda)
+        register_sale(nome, quantidade, valor_venda, cliente, forma_pagamento)
     
     venda1 = db.estoque.find({})
 
