@@ -147,7 +147,7 @@ def efetuando_vendas():
                 
     with col5:
         cliente = st.text_input('Nome do cliente')
-pagamento = ['Pix', 'Cartão de crédito', 'Cartão de débito', 'Dinheiro', 'Desconto em folha')
+pagamento = ['Pix', 'Cartão de crédito', 'Cartão de débito', 'Dinheiro', 'Desconto em folha']
     with col6:
         forma_pagamento = st.selectbox('Forma de pagamento', pagamento)
 
