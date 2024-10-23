@@ -157,7 +157,7 @@ def efetuando_vendas():
         st.markdown('</div>', unsafe_allow_html=True)
 
     if vende_produto:
-        register_sale(nome, quantidade, valor_venda,cliente, forma_pagamento)
+        register_sale(nome, quantidade, valor_venda)
     
     venda1 = db.estoque.find({})
 
