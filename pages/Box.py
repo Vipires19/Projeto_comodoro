@@ -165,7 +165,7 @@ def efetuando_vendas():
     for item in venda1:
         vendadf.append(item)
 
-    df = pd.DataFrame(vendadf, columns= ['_id', 'Nome', 'Código','Quantidade', 'Valor de compra', 'Valor de venda','Cliente', 'Forma de pagamento'])
+    df = pd.DataFrame(vendadf, columns= ['_id', 'Nome', 'Código','Quantidade', 'Valor de compra', 'Valor de venda'])
     df.drop(columns='_id', inplace=True)
     venda = df
     st.session_state['venda'] = venda
