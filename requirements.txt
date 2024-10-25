@@ -1,4 +1,5 @@
 certifi
+path
 openpyxl
 pandas
 plotly
