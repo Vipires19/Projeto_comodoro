@@ -30,6 +30,8 @@ db = client.estoquecmdr
 coll = db.estoque
 coll2 = db.Vendas
 coll3 = db.pagamentos
+coll4 = db.clientes
+coll5 = db.Usuarios
 
 st.set_page_config(
             layout =  'wide',
@@ -39,22 +41,24 @@ st.set_page_config(
 
 # --- Authentication ---
 # Load hashed passwords
-file_path = Path('Box.py').parent/"db"/"hashed_pw.pkl"
+file_path = Path('comodoro.py').parent/"db"/"hashed_pw.pkl"
 
 with file_path.open("rb") as file:
   hashed_passwords = pickle.load(file)
+
+user = coll5.find({})
+users = []
+for item in user:
+    item.pop('_id', None)
+    users.append(item)
+
+usuarios = {'usernames' : {}}
+for item in users:
+    usuarios['usernames'][item['username']] = {'name' : item['name'], 'password' : item['password'][0]}
   
-credentials = {
-    "usernames": {
-        "admin": {
-            "name": "Admin",
-            "password": hashed_passwords[0]
-        }
-    }
-}
+credentials = usuarios
 
-
-authenticator = stauth.Authenticate(credentials= credentials, cookie_name="st_session", cookie_key="key123", cookie_expiry_days= 1)
+authenticator = stauth.Authenticate(credentials= credentials, cookie_name= 'random_cookie_name', cookie_key='key123', cookie_expiry_days= 1)
 authenticator.login()
 
 def inserindo_dados():
@@ -112,13 +116,65 @@ def inserindo_dados():
     st.session_state['estoque_2'] = estoque_2
     st.session_state['estoque_3'] = estoque_3
 
-def efetuando_vendas():
+def deletando_produtos():
+    estoque = st.session_state['estoque']
+    col1,col2,col3,col4,col5,col6 = st.columns(6)
+    op = ['Editar', 'Apagar']
+    opcoes = col1.selectbox('Opções', op)
+    cod = estoque['Código'].value_counts().index
 
+    if opcoes == 'Editar':
+        codigo = col2.selectbox('Cód', cod)
+        if codigo == 1:
+            df_cod = estoque[estoque['Código'] == codigo]
+            produto = df_cod['Produto'].value_counts().index
+            prod = col3.selectbox('Prod.', produto)
+            
+            campo = ['Produto', 'Quantidade', 'Valor de compra']
+            campos = col4.selectbox('Selecione o campo para editar', campo)
+            if campos == 'Produto':
+                entry = col5.text_input('Novo produto')
+            if campos == 'Quantidade':
+                entry = col5.number_input('Nova quantidade', min_value=0)
+            if campos == 'Valor de compra':
+                entry = col5.number_input('Novo Valor')
+            edita_produto = col6.button('Editar')
+            if edita_produto:
+                coll.update_one({'Produto': produto}, {'$set' : {campos : entry}})
+    
+    
+    if opcoes == 'Apagar':
+        codigo = col2.selectbox('Cód', cod)
+        if codigo == 3:
+            df_cod = estoque[estoque['Código'] == codigo]
+            produto = df_cod['Moto'].value_counts().index
+            bike = col3.selectbox('Moto', produto)
+            edita_produto = col4.button('Apagar')
+            if edita_produto:
+                coll.delete_one({'Moto': bike})
+        else:        
+            df_cod = estoque[estoque['Código'] == codigo]
+            produto = df_cod['Produto'].value_counts().index
+            prod = col3.selectbox('Prod.', produto)
+            edita_produto = col4.button('Apagar')
+            if edita_produto:
+                coll.delete_one({'Produto': prod})
+
+def efetuando_vendas():
+    cadastro = coll4.find({})
+    clientesdf = []
+    for item in cadastro:
+        clientesdf.append(item)
+    
+    clientesdf = pd.DataFrame(clientesdf, columns= ['_id', 'nome'])
+    clientesdf.drop(columns='_id', inplace=True)
+    
     estoque = st.session_state['estoque']
     estoque_1 = st.session_state['estoque_1']
     estoque_2 = st.session_state['estoque_2']
     estoque_3 = st.session_state['estoque_3']
     fuso_horario_brasilia = pytz.timezone("America/Sao_Paulo")
+
 
     col1,col2,col3,col4, col5,col6,col7,col8= st.columns(8)
 
@@ -132,7 +188,8 @@ def efetuando_vendas():
         valor_venda = col4.number_input('Valor de venda em R$' )
         total = quantidade * valor_venda
         valor_total = col4.metric('Valor total', f'R$ {total:,.2f}')
-        cliente = col5.text_input('Nome do cliente')
+        nome = clientesdf['nome'].value_counts().index
+        cliente = col5.selectbox('Nome do cliente', nome)
         pagamento = ['Pix', 'Cartão de crédito', 'Dinheiro', 'Desconto em folha']
         forma_pagamento = col6.selectbox('Forma de pagamento', pagamento)
         data_debito = col7.date_input('Data do débito', format='DD.MM.YYYY')
@@ -177,11 +234,12 @@ def efetuando_vendas():
     if codigo == 2:
         prod = estoque_2['Produto'].value_counts().index
         produto = col2.selectbox('Produto', prod)
-        quantidade = col3.number_input('Quantidade.', min_value = 1)
+        quantidade = col3.number_input('Quantidade.', min_value = 1, max_value=1)
         data_vale = col4.date_input('Data do vale', format='DD.MM.YYYY')
         valor_vale = col5.number_input('Valor do vale em R$')
         total = quantidade * valor_vale
-        cliente = col6.text_input('Nome do cliente')
+        nome = clientesdf['nome'].value_counts().index
+        cliente = col6.selectbox('Nome do cliente', nome)
         pagamento = ['Pix', 'Cartão de crédito', 'Dinheiro', 'Desconto em folha']
         forma_pagamento = col7.selectbox('Forma de pagamento', pagamento)
         data_debito = col8.date_input('Data do débito', format='DD.MM.YYYY')
@@ -209,7 +267,8 @@ def efetuando_vendas():
                     'Forma de pagamento' : forma_pagamento,
                     'Data do débito' : str(data_debito)}
             
-        finalsell = estoque_2[estoque_2['Produto'] == produto][['Quantidade']].values - quantidade
+        finalsell = estoque_2[estoque_2['Produto'] == produto][['Quantidade']].values[0] - quantidade
+        
         vende_produto = col8.button('Concluir Venda')     
         if vende_produto:
             tempo_agora = datetime.now(fuso_horario_brasilia)
@@ -233,7 +292,8 @@ def efetuando_vendas():
         valor_diaria = col5.number_input('Valor da diaria em R$')
         total = quantidade * valor_diaria
         valor_total = col5.metric('Valor total', f'R$ {total:,.2f}')
-        cliente = col6.text_input('Nome do cliente')
+        nome = clientesdf['nome'].value_counts().index
+        cliente = col6.selectbox('Nome do cliente', nome)
         pagamento = ['Pix', 'Cartão de crédito', 'Dinheiro', 'Desconto em folha']
         forma_pagamento = col7.selectbox('Forma de pagamento', pagamento)
         data_debito = col8.date_input('Data do débito', format='DD.MM.YYYY')
@@ -279,6 +339,29 @@ def efetuando_vendas():
             
         estoque_3    
 
+    st.divider()
+    
+    st.markdown('Cadastro de novos clientes')
+    nome_cliente = st.text_input('Nome cliente:')
+    col1,col2,col3,col4,col5,col6 = st.columns(6)
+    cadastrar = col1.button('Cadastrar')
+    if cadastrar:
+        coll4.insert_many([{'nome' : nome_cliente}])
+    deletar = col2.button('Excluir')
+    if deletar:
+        coll4.delete_one({'nome' : nome_cliente})
+
+def atualizando_quantidade():
+    estoque = st.session_state['estoque']
+    estoque = estoque[['Produto', 'Quantidade']]
+    for value in estoque['Quantidade']:
+        if value == 0:
+            produto = estoque[estoque['Quantidade'] == value]['Produto']
+            for prod in produto:
+                coll.delete_one({'Produto': prod})
+        if value != 0:
+            pass
+
 def historico_vendas():
     venda1 = db.Vendas.find({})
     fuso_horario_brasilia = pytz.timezone("America/Sao_Paulo")
@@ -291,50 +374,113 @@ def historico_vendas():
             if isinstance(data_utc, datetime):
                 data_brasilia = data_utc.astimezone(fuso_horario_brasilia)
                 item['Data da venda'] = data_brasilia.strftime('%d/%m/%Y %H:%M')
-    
+
     df = pd.DataFrame(venda_df)
     df.drop(columns='_id', inplace=True)
     df = df[['Código','Quantidade','Data da venda', 'Cliente', 'Forma de pagamento', 'Produto' ,'Data do vale', 'Valor da venda',
               'Data do débito', 'Quantidade de semanas', 'Moto', 'Quantidade de dias',
               'Data do aluguel', 'Valor do aluguel']]
     
-    st.markdown('**Venda de artigos**')
+    st.session_state['hist_full'] = df
+    
     hist_1 = df[df['Código'] == 1][['Data da venda', 'Produto' ,'Quantidade', 'Cliente', 'Valor da venda', 'Forma de pagamento', 'Data do débito', 'Quantidade de semanas']]
     hist_1['Quantidade de semanas'] = hist_1['Quantidade de semanas'].fillna(0)
-    
-    hist_1
     st.session_state['hist_1'] = hist_1
 
-    st.markdown('**Vales/Antecipações**')
     hist_2 = df[df['Código'] == 2][['Data da venda', 'Produto' , 'Quantidade', 'Data do vale', 'Cliente', 'Valor da venda', 'Forma de pagamento', 'Data do débito', 'Quantidade de semanas']]
     hist_2['Quantidade de semanas'] = hist_2['Quantidade de semanas'].fillna(0)
-
-    hist_2
     st.session_state['hist_2'] = hist_2
-
-    st.markdown('**Aluguel de motos**')
+    
     hist_3 = df[df['Código'] == 3][['Data da venda', 'Produto' , 'Moto', 'Cliente','Data do aluguel', 'Quantidade de dias', 'Valor do aluguel', 
                                     'Forma de pagamento', 'Data do débito', 'Quantidade de semanas']]
     hist_3['Quantidade de semanas'] = hist_3['Quantidade de semanas'].fillna(0)
-
-    hist_3
     st.session_state['hist_3'] = hist_3
 
-    st.session_state['hist_full'] = df
+    filtro_hist = st.segmented_control('Filtro', ['Diário', 'Geral'], selection_mode = 'single')
+
+
+    if filtro_hist == 'Diário':
+
+        col1,col2,col3 = st.columns(3)
+        dia = col1.number_input('Pesquisa Dia', min_value=1, max_value=31)
+        mes = str(col2.number_input('Pesquisa Mês', min_value=1, max_value=12))
+        ano = str(col3.number_input('Pesquisa Ano', min_value=2024, max_value=2030))
+        if dia <= 9:
+            dia = f'0{dia}'
+        data_pesquisa = f'{ano}-{mes}-{dia}'
+    
+        st.header('**Venda de produtos**')
+
+        produtos = hist_1[hist_1['Data do débito'] == data_pesquisa]
+        if produtos['Quantidade'].empty:
+            st.markdown('Não há vendas para data selecionada')
+        else:
+            produtos
+    
+        st.header('**Vales/Antecipações**')
+
+        vales = hist_2[hist_2['Data do débito'] == data_pesquisa]
+        if vales['Quantidade'].empty:
+            st.markdown('Não há vales para data selecionada')
+        else:
+            vales
+    
+        st.header('**Aluguel de motos**')
+
+        motos = hist_3[hist_3['Data do aluguel'] == data_pesquisa]
+        if motos['Moto'].empty:
+            st.markdown('Não há aluguéis para data selecionada')
+        else:
+            motos
+
+    if filtro_hist == 'Geral':
+        st.header('**Venda de produtos**')
+        hist_1
+
+        st.header('**Vales/Antecipações**')
+        hist_2
+
+        st.header('**Aluguel de motos**')
+        hist_3
+
+    col1,col2,col3 = st.columns(3)
+    pessoa = df['Cliente'].value_counts().index
+    cliente = col1.selectbox('Cliente', pessoa)
+    df_cliente = df[df['Cliente'] == cliente]
+    data = df_cliente['Data da venda'].value_counts().index
+    data_venda = col2.selectbox('Data da venda', data)
+    deleta_venda = col3.button('Deletar')
+    if deleta_venda:
+        coll2.delete_one({'Cliente': cliente,
+                         'Data da venda' : data_venda})    
 
 def pesquisa_pgto():
+    df = st.session_state['hist_full']
     fuso_horario_brasilia = pytz.timezone("America/Sao_Paulo")
-    categoria = ['Artigos', 'Vale/Antecipação', 'Aluguel']
-    cat = st.selectbox('Categoria', categoria)
-    if cat == 'Artigos':
-        hist_1 = st.session_state['hist_1']
-        nome = hist_1['Cliente'].value_counts().index
-        cliente = st.selectbox('Cliente', nome)
-        df_cliente = hist_1[hist_1['Cliente'] == cliente]
-        df_cliente
-        prod = df_cliente['Produto'].value_counts().index
+    cliente = df['Cliente'].value_counts().index
+    clientes = st.selectbox('Motoca', cliente)
+    df_motoca = df[df['Cliente'] == clientes]
+    df_motoca_1 = df_motoca[df_motoca['Código'] == 1][['Data da venda', 'Produto' ,'Quantidade', 'Valor da venda', 'Forma de pagamento', 'Data do débito', 'Quantidade de semanas']]
+    df_motoca_2 = df_motoca[df_motoca['Código'] == 2][['Data da venda', 'Data do vale', 'Valor da venda', 'Forma de pagamento', 'Data do débito', 'Quantidade de semanas']]
+    df_motoca_3 = df_motoca[df_motoca['Código'] == 3][['Data da venda', 'Produto' , 'Moto', 'Data do aluguel', 'Quantidade de dias', 'Valor do aluguel', 'Forma de pagamento', 'Data do débito', 'Quantidade de semanas']]
+    col1,col2,col3 = st.columns(3)
+    col1.header('Produtos')
+    col1.dataframe(df_motoca_1)
+    col2.header('Vale/Antecipação')
+    col2.dataframe(df_motoca_2)
+    col3.header('Aluguel Moto')
+    col3.dataframe(df_motoca_3)
+
+    categoria = df['Código'].value_counts().index
+    cat = st.selectbox('Cód', categoria)
+    if cat == 1:
+        #nome = hist_1['Cliente'].value_counts().index
+        #cliente = st.selectbox('Cliente', nome)
+        #df_cliente = hist_1[hist_1['Cliente'] == cliente]
+        #df_cliente
+        prod = df_motoca_1['Produto'].value_counts().index
         produto = st.selectbox('Prod.', prod)
-        df_produto = df_cliente[df_cliente['Produto'] == produto]
+        df_produto = df_motoca_1[df_motoca_1['Produto'] == produto]
         
     
         col1,col2,col3,col4 = st.columns(4)
@@ -368,13 +514,13 @@ def pesquisa_pgto():
             val_pal = valor/quantidade_semanas
             col3.metric('Quantidade de semanas', quantidade_semanas)
             col4.metric('Valor da parcela', f'R${val_pal:,.2f}')
-            pagamento = {'Cliente' : cliente,
+            pagamento = {'Cliente' : clientes,
                          'Produto' : produto,
                          'Valor' : val_pal,
                         'Forma pagamento' : forma_pgto}
             
         else:
-            pagamento = {'Cliente' : cliente,
+            pagamento = {'Cliente' : clientes,
                          'Produto' : produto,
                          'Valor' : valor,
                          'Forma pagamento' : forma_pgto}            
@@ -389,7 +535,7 @@ def pesquisa_pgto():
             pagamento.update({'Data do pagamento' : tempo_agora})
             coll3.insert_many([pagamento])
         
-        log_atendimento = coll3.find({'Produto' : produto, 'Cliente' : cliente})
+        log_atendimento = coll3.find({'Produto' : produto, 'Cliente' : clientes})
 
         log_atendimentodf = []
         for item in log_atendimento:
@@ -402,15 +548,15 @@ def pesquisa_pgto():
             else:
                 pd.DataFrame(log_atendimentodf)[['Data do pagamento','Forma pagamento', 'Valor']]
 
-    if cat == 'Vale/Antecipação':
-        hist_2 = st.session_state['hist_2']
-        nome = hist_2['Cliente'].value_counts().index
-        cliente = st.selectbox('Cliente', nome)
-        df_cliente = hist_2[hist_2['Cliente'] == cliente]
-        df_cliente
-        prod = df_cliente['Quantidade'].value_counts().index
+    if cat == 2:
+        #hist_2 = st.session_state['hist_2']
+        #nome = hist_2['Cliente'].value_counts().index
+        #cliente = st.selectbox('Cliente', nome)
+        #df_cliente = hist_2[hist_2['Cliente'] == cliente]
+        #df_cliente
+        prod = df_motoca_2['Data da venda'].value_counts().index
         produto = st.selectbox('Vale', prod)
-        df_produto = df_cliente[df_cliente['Quantidade'] == produto]
+        df_produto = df_motoca_2[df_motoca_2['Data da venda'] == produto]
     
         col1,col2,col3,col4 = st.columns(4)
 
@@ -441,13 +587,13 @@ def pesquisa_pgto():
             val_pal = valor/quantidade_semanas
             col3.metric('Quantidade de semanas', quantidade_semanas)
             col4.metric('Valor da parcela', f'R${val_pal:,.2f}')
-            pagamento = {'Cliente' : cliente,
+            pagamento = {'Cliente' : clientes,
                          'Quantidade' : produto,
                          'Valor' : val_pal,
                          'Forma pagamento' : forma_pgto}
             
         else:
-            pagamento = {'Cliente' : cliente,
+            pagamento = {'Cliente' : clientes,
                          'Quantidade' : produto,
                          'Valor' : valor,
                          'Forma pagamento' : forma_pgto}
@@ -462,7 +608,7 @@ def pesquisa_pgto():
             pagamento.update({'Data do pagamento' : tempo_agora})
             coll3.insert_many([pagamento])
 
-        log_atendimento = coll3.find({'Quantidade' : produto, 'Cliente' : cliente})
+        log_atendimento = coll3.find({'Quantidade' : produto, 'Cliente' : clientes})
 
         log_atendimentodf = []
         for item in log_atendimento:
@@ -475,15 +621,15 @@ def pesquisa_pgto():
             else:
                 pd.DataFrame(log_atendimentodf)[['Data do pagamento','Forma pagamento', 'Valor']]
                  
-    if cat == 'Aluguel':
-        hist_3 = st.session_state['hist_3']
-        nome = hist_3['Cliente'].value_counts().index
-        cliente = st.selectbox('Cliente', nome)
-        df_cliente = hist_3[hist_3['Cliente'] == cliente]
-        df_cliente
-        prod = df_cliente['Moto'].value_counts().index
+    if cat == 3:
+        #hist_3 = st.session_state['hist_3']
+        #nome = hist_3['Cliente'].value_counts().index
+        #cliente = st.selectbox('Cliente', nome)
+        #df_cliente = hist_3[hist_3['Cliente'] == cliente]
+        #df_cliente
+        prod = df_motoca_3['Moto'].value_counts().index
         produto = st.selectbox('Moto', prod)
-        df_produto = df_cliente[df_cliente['Moto'] == produto]
+        df_produto = df_motoca_3[df_motoca_3['Moto'] == produto]
     
         col1,col2,col3,col4,col5 = st.columns(5)
 
@@ -493,7 +639,7 @@ def pesquisa_pgto():
         data3 = str(datetime_obj).split(' ')[0].split('-')[2]
         data_metric = f'{data3}/{data2}/{data1}'
 
-        quantidade = df_produto['Quantidade de dias'].value_counts().index
+        quantidade = df_produto['Quantidade de dias'].value_counts().index[0]
         valor = df_produto['Valor do aluguel'].value_counts().index[0]
         forma_pgto = df_produto['Forma de pagamento'].value_counts().index[0]
 
@@ -515,13 +661,13 @@ def pesquisa_pgto():
             val_pal = valor/quantidade_semanas
             col3.metric('Quantidade de semanas', quantidade_semanas)
             col4.metric('Valor da parcela', f'R${val_pal:,.2f}')
-            pagamento = {'Cliente' : cliente,
+            pagamento = {'Cliente' : clientes,
                          'Moto' : produto,
                          'Valor' : val_pal,
                          'Forma pagamento' : forma_pgto}
             
         else:
-            pagamento = {'Cliente' : cliente,
+            pagamento = {'Cliente' : clientes,
                          'Moto' : produto,
                          'Valor' : valor,
                          'Forma pagamento' : forma_pgto}
@@ -536,7 +682,7 @@ def pesquisa_pgto():
             pagamento.update({'Data do pagamento' : tempo_agora})
             coll3.insert_many([pagamento])
 
-        log_atendimento = coll3.find({'Moto' : produto, 'Cliente' : cliente})
+        log_atendimento = coll3.find({'Moto' : produto, 'Cliente' : clientes})
 
         log_atendimentodf = []
         for item in log_atendimento:
@@ -549,23 +695,21 @@ def pesquisa_pgto():
             else:
                 pd.DataFrame(log_atendimentodf)[['Data do pagamento','Forma pagamento', 'Valor']]
 
-
-
-
-
 def pagina_principal():
     st.title('**BOX Comodoro**')
 
     btn = authenticator.logout()
     if btn:
         st.session_state["authentication_status"] == None
-    
+
     tab1,tab2,tab3,tab4 = st.tabs(['Estoque', 'Vendas','Histórico de Vendas', 'Pagamento'])
 
     tab1.title('Estoque')
     
     with tab1:
         inserindo_dados()
+        st.divider()
+        deletando_produtos()
                 
     tab2.title('Vendas')
 
@@ -581,8 +725,9 @@ def pagina_principal():
 
     with tab4:
         pesquisa_pgto()
-            
 
+    atualizando_quantidade()
+            
 def main():
     if st.session_state["authentication_status"]:
     
@@ -593,7 +738,6 @@ def main():
 
     elif st.session_state["authentication_status"] == None:
         st.warning("Please insert username and password")
-
 
 if __name__ == '__main__':
 
